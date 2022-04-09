@@ -1,7 +1,9 @@
+
+
 const canvas = document.querySelector('canvas');
 const c = canvas.getContext('2d');
 
-const gravity = 0.2;
+const gravity = 0.7;
 
 canvas.width = 1024;
 canvas.height = 576;
@@ -13,19 +15,32 @@ c.fillRect(0,0,canvas.width, canvas.height)
 class Sprite
 {
     
-    constructor({position, fillStyle, velocity, lastKey})
+    constructor({position, fillStyle, velocity})
     {
         this.position = position; 
         this.fillStyle = fillStyle;
         this.velocity = velocity;
+        this.width = 50;
         this.height = 150;
-        this.lastKey = lastKey;
+        this.lastKey;
+
+        // hit box based on the position of the player
+        this.attackBox = 
+        {
+            position : this.position,
+            width : 100,
+            height : 50
+        }
     }
 
     draw()
     {
         c.fillStyle = this.fillStyle;
-        c.fillRect(this.position.x, this.position.y, 50, this.height)
+        c.fillRect(this.position.x, this.position.y, this.width, this.height)
+        
+        //attack box render
+        c.fillStyle = 'green'
+        c.fillRect(this.attackBox.position.x, this.attackBox.position.y, this.attackBox.width, this.attackBox.height)
     }
 
     update()
@@ -104,15 +119,65 @@ function animate()
     player.update();
     enemy.update();
 
+    //PLAYER MOVEMENT
     player.velocity.x = 0;
-    if(keys.a.pressed && (lastKey === 'a'))
+    if(keys.a.pressed && (player.lastKey === 'a'))
     {
-        player.velocity.x = -1;
+        player.velocity.x = -5;
     }
-    else if(keys.d.pressed && lastKey === 'd')
+    else if(keys.d.pressed && player.lastKey === 'd')
     {
-        player.velocity.x = 1;
+        player.velocity.x = 5;
     }
+
+    //ENEMY MOVEMENT
+    enemy.velocity.x = 0;
+    if(keys.ArrowLeft.pressed && (enemy.lastKey === 'ArrowLeft'))
+    {
+        enemy.velocity.x = -5;
+    }
+    else if(keys.ArrowRight.pressed && (enemy.lastKey === 'ArrowRight'))
+    {
+        enemy.velocity.x = 5;
+    }
+
+    // COLLISION DETECTION
+    if(detectCollision(player, enemy))
+    {
+        console.log('hit');
+    }
+}
+
+function detectCollision(player, enemy)
+{
+    
+    if(
+        // player weapon hits the enemy
+        player.attackBox.position.x + player.attackBox.width >= enemy.position.x &&
+        // can only hit the enemy and not continue damaging them when pass them
+        player.attackBox.position.x <= enemy.position.x + enemy.width &&
+        // player weapon hits from above 
+        player.attackBox.position.y + player.attackBox.height >= enemy.position.y &&
+        // can only hit the enemy from above and not continue damaging when landed
+        player.attackBox.position.y <= enemy.position.y + enemy.height
+      )
+    {
+        // console.log("attackbox height: " + (player.attackBox.position.y + player.attackBox.height))
+        // console.log("attackbox length: " + (player.attackBox.position.x + player.attackBox.width))
+        // console.log("attackbox postion x: " + player.attackBox.position.x)
+        // console.log("attackbox postion y: " + player.attackBox.position.y)
+        // console.log("player positon: " + player.position.x + ", " + player.position.y)
+        // console.log("enemy position: " + enemy.position.x + ", " + enemy.position.y)
+        return true;
+    }
+    // else if (enemy.attackBox.position.x + enemy.attackBox.width <= player.attackBox.position.x)
+    // {
+    //     return true;
+    // }
+    // else
+    // {
+    //     return false;
+    // }
 }
 
 animate();
@@ -133,9 +198,8 @@ window.addEventListener('keydown', (event) =>
         case 'w':
             keys.w.pressed = true;
             player.lastKey = 'w';
-            player.velocity.y = -10;
+            player.velocity.y = -25;
             break;
-
         case 'ArrowRight':
             keys.ArrowRight.pressed = true;
             enemy.lastKey = 'ArrowRight';
@@ -147,7 +211,7 @@ window.addEventListener('keydown', (event) =>
         case 'ArrowUp':
             keys.ArrowUp.pressed = true;
             enemy.lastKey = 'ArrowUp';
-            enemy.velocity.y = -10;
+            enemy.velocity.y = -25;
             break;
     }
 })
@@ -161,6 +225,17 @@ window.addEventListener('keyup', (event) =>
             break;
         case 'a':
             keys.a.pressed = false;
+            break;
+    }
+
+    //enemy keys
+    switch(event.key)
+    {
+        case 'ArrowLeft':
+            keys.ArrowLeft.pressed = false;
+            break;
+        case 'ArrowRight':
+            keys.ArrowRight.pressed = false;
             break;
     }
 })
